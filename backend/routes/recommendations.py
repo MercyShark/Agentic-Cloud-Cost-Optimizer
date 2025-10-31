@@ -1,25 +1,24 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from models import Recommendation
-from database import recommendations
+from database import db
 
 router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 
 @router.get("", response_model=List[Recommendation])
 async def get_recommendations(client_id: Optional[str] = None):
-    if client_id:
-        return [r for r in recommendations.values() if r.clientId == client_id]
-    return list(recommendations.values())
+    return await db.get_all_recommendations(client_id)
 
 @router.get("/{rec_id}", response_model=Recommendation)
 async def get_recommendation(rec_id: str):
-    if rec_id not in recommendations:
+    recommendation = await db.get_recommendation(rec_id)
+    if not recommendation:
         raise HTTPException(status_code=404, detail="Recommendation not found")
-    return recommendations[rec_id]
+    return recommendation
 
 @router.put("/{rec_id}/status")
 async def update_recommendation_status(rec_id: str, status: str):
-    if rec_id not in recommendations:
+    success = await db.update_recommendation_status(rec_id, status)
+    if not success:
         raise HTTPException(status_code=404, detail="Recommendation not found")
-    recommendations[rec_id].status = status
     return {"message": "Status updated successfully"}

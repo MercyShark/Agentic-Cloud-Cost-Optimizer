@@ -7,16 +7,15 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from bedrock_agent import BedrockOptimizationAgent
 from models import AnalysisRequest, Recommendation
-from database import cloud_clients, analysis_results, recommendations
+from database import db
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
 @router.post("/analyze")
 async def analyze(request: AnalysisRequest, background_tasks: BackgroundTasks):
-    if request.clientId not in cloud_clients:
+    client = await db.get_client(request.clientId)
+    if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    
-    client = cloud_clients[request.clientId]
     
     try:
         agent = BedrockOptimizationAgent(
@@ -29,7 +28,7 @@ async def analyze(request: AnalysisRequest, background_tasks: BackgroundTasks):
         result = agent.analyze(request.query)
         
         analysis_id = f"analysis_{datetime.utcnow().timestamp()}"
-        analysis_results[analysis_id] = {
+        analysis_data = {
             "id": analysis_id,
             "clientId": request.clientId,
             "query": request.query,
@@ -37,11 +36,13 @@ async def analyze(request: AnalysisRequest, background_tasks: BackgroundTasks):
             "timestamp": datetime.utcnow()
         }
         
+        await db.create_analysis_result(analysis_id, analysis_data)
+        
         if result.get("status") == "success":
             analysis_text = result.get("analysis", "")
             
             rec_id = f"rec_{datetime.utcnow().timestamp()}"
-            recommendations[rec_id] = Recommendation(
+            recommendation = Recommendation(
                 id=rec_id,
                 clientId=request.clientId,
                 title="Cost Optimization Recommendations",
@@ -52,6 +53,7 @@ async def analyze(request: AnalysisRequest, background_tasks: BackgroundTasks):
                 status="pending",
                 createdAt=datetime.utcnow()
             )
+            await db.create_recommendation(recommendation)
         
         return {
             "analysisId": analysis_id,
@@ -64,6 +66,7 @@ async def analyze(request: AnalysisRequest, background_tasks: BackgroundTasks):
 
 @router.get("/analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
-    if analysis_id not in analysis_results:
+    result = await db.get_analysis_result(analysis_id)
+    if not result:
         raise HTTPException(status_code=404, detail="Analysis not found")
-    return analysis_results[analysis_id]
+    return result

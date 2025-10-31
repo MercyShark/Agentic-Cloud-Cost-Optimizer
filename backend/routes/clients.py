@@ -1,35 +1,35 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from models import CloudClient
-from database import cloud_clients
+from database import db
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
 @router.post("", response_model=CloudClient)
 async def create_client(client: CloudClient):
-    cloud_clients[client.id] = client
-    return client
+    return await db.create_client(client)
 
 @router.get("", response_model=List[CloudClient])
 async def get_clients():
-    return list(cloud_clients.values())
+    return await db.get_all_clients()
 
 @router.get("/{client_id}", response_model=CloudClient)
 async def get_client(client_id: str):
-    if client_id not in cloud_clients:
+    client = await db.get_client(client_id)
+    if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    return cloud_clients[client_id]
+    return client
 
 @router.put("/{client_id}", response_model=CloudClient)
 async def update_client(client_id: str, client: CloudClient):
-    if client_id not in cloud_clients:
+    existing = await db.get_client(client_id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Client not found")
-    cloud_clients[client_id] = client
-    return client
+    return await db.update_client(client_id, client)
 
 @router.delete("/{client_id}")
 async def delete_client(client_id: str):
-    if client_id not in cloud_clients:
+    success = await db.delete_client(client_id)
+    if not success:
         raise HTTPException(status_code=404, detail="Client not found")
-    del cloud_clients[client_id]
     return {"message": "Client deleted successfully"}
