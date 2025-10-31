@@ -1,0 +1,8 @@
+fastapi
+fastmcp
+boto3
+aioboto3
+uvicorn
+python-dateutil
+typing-extensions
+pydantic
