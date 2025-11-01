@@ -1,4 +1,4 @@
-# AWS Optimization Tools - Architecture & Design
+# Agentic Cloud Cost Optimizer - Architecture & Design
 
 ## 🏛️ System Architecture
 
