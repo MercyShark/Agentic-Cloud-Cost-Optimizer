@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM role for Cloud Insights Agent (Read-Only)"
+
+Resources:
+  CloudInsightsReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudInsightsReadOnly
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "arn:aws:iam::533266974611:root" 
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Policies:
+        - PolicyName: CloudInsightsCustomPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "cloudwatch:ListMetrics"
+                  - "cloudwatch:GetMetricData"
+                  - "cloudwatch:GetMetricStatistics"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:GetLogEvents"
+                  - "logs:FilterLogEvents"
+                  - "ce:GetCostAndUsage"
+                  - "ce:GetCostForecast"
+                  - "ce:GetCostAndUsageWithResources"
+                  - "ce:GetTags"
+                  - "s3:ListBucket"
+                  - "s3:GetObject"
+                  - "ec2:DescribeInstances"
+                  - "ec2:DescribeTags"
+                  - "ec2:DescribeNatGateways"
+                  - "rds:DescribeDBInstances"
+                  - "rds:DescribeDBClusters"
+                  - "lambda:ListFunctions"
+                  - "lambda:GetFunction"
+                  - "lambda:GetFunctionConfiguration"
+                  - "ecs:ListClusters"
+                  - "ecs:DescribeClusters"
+                  - "ecs:ListTasks"
+                  - "ecs:DescribeTasks"
+                Resource: "*"
